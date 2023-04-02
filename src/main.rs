@@ -1,5 +1,6 @@
+use std::rc::Rc;
 use emojis;
-use gtk::{Application, ApplicationWindow, Clipboard, EventBox, FlowBox, Label, Orientation, Paned, ScrolledWindow};
+use gtk::{Application, ApplicationWindow, Clipboard, EventBox, FlowBox, Label, Orientation, Paned, ScrolledWindow, SearchEntry};
 use gtk::gdk;
 use gtk::prelude::*;
 
@@ -14,7 +15,12 @@ fn main() {
         window.set_title("🚀 Emoji Picker");
         window.set_default_size(640, 480);
 
+        let search_entry = SearchEntry::new();
+        let feedback_label = Rc::new(Label::new(None));
+
         let upper_content_paned = Paned::new(Orientation::Horizontal);
+        upper_content_paned.pack1(&search_entry, true, false);
+        upper_content_paned.pack2(feedback_label.as_ref(), true, false);
 
         let main_horizontal_paned = Paned::new(Orientation::Horizontal);
 
@@ -25,15 +31,16 @@ fn main() {
         right_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
 
         for emoji in emojis::iter() {
-            let emoji_str = format!("{}", emoji);
-            let label = Label::new(None);
-            label.set_markup(&format!("<span font=\"emoji 24\">{}</span>", emoji_str));
+            let emoji_str = emoji.as_str();
+            let emoji_label = Label::new(None);
+            emoji_label.set_markup(&format!("<span font=\"emoji 24\">{emoji_str}</span>"));
             let event_box = EventBox::new();
-            event_box.add(&label);
+            let feedback_label_context = feedback_label.clone();
+            event_box.add(&emoji_label);
             event_box.connect_button_press_event(move |_, _| {
-                Clipboard::get(&gdk::SELECTION_CLIPBOARD).set_text(&emoji_str);
-                Clipboard::get(&gdk::SELECTION_PRIMARY).set_text(&emoji_str);
-                println!("Copied {emoji_str} to clipboard");
+                Clipboard::get(&gdk::SELECTION_CLIPBOARD).set_text(emoji_str);
+                Clipboard::get(&gdk::SELECTION_PRIMARY).set_text(emoji_str);
+                feedback_label_context.set_text(&format!("{emoji_str} copied to clipboard !"));
                 Inhibit(true)
             });
             flow_box.add(&event_box);
