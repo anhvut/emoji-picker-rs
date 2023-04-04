@@ -2,7 +2,7 @@ use std::iter::{Iterator, zip};
 use std::rc::Rc;
 use emojis;
 use emojis::Emoji;
-use gtk::{Application, ApplicationWindow, Clipboard, EventBox, FlowBox, Label, Orientation, Paned, ScrolledWindow, SearchEntry};
+use gtk::{Align, Application, ApplicationWindow, Clipboard, EventBox, FlowBox, Label, Orientation, Paned, ScrolledWindow, SearchEntry, SelectionMode};
 use gtk::gdk;
 use gtk::prelude::*;
 
@@ -60,12 +60,17 @@ fn main() {
         let right_window = ScrolledWindow::new(None::<&gtk::Adjustment>, None::<&gtk::Adjustment>);
         let flow_box_rc = Rc::new(FlowBox::new());
         let flow_box = flow_box_rc.as_ref();
+        flow_box.set_max_children_per_line(1000);
+        flow_box.set_valign(Align::Start);
+        flow_box.set_selection_mode(SelectionMode::None);
         right_window.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
 
         for ed in emojis_descriptor_rc.as_ref() {
             let emoji = ed.emoji;
             let emoji_str = emoji.as_str();
             let emoji_label = Label::new(None);
+            emoji_label.set_selectable(false);
+            emoji_label.set_can_focus(false);
             emoji_label.set_markup(&format!("<span font=\"emoji 24\">{emoji_str}</span>"));
             let event_box = EventBox::new();
             let feedback_label_context = feedback_label_rc.clone();
@@ -76,6 +81,7 @@ fn main() {
                 feedback_label_context.set_text(&format!("{emoji_str} copied to clipboard !"));
                 Inhibit(true)
             });
+            event_box.set_can_focus(false);
             flow_box.add(&event_box);
         }
         right_window.add(flow_box);
